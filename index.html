@@ -1,13 +1,48 @@
-<!DOCTYPE html>
-<html lang="">
-  <head>
-    <meta charset="UTF-8">
-    <link rel="icon" href="/favicon.ico">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vite App</title>
-  </head>
-  <body>
-    <div id="app"></div>
-    <script type="module" src="/src/main.js"></script>
-  </body>
-</html>
+// Install dependencies: npm create vite@latest dnd-tracker --template vue && cd dnd-tracker && npm
+install firebase // src/main.js import { createApp } from 'vue'; import App from './App.vue'; import
+{ createRouter, createWebHistory } from 'vue-router'; import CalendarView from
+'./views/CalendarView.vue'; import { initializeApp } from 'firebase/app'; import { getFirestore }
+from 'firebase/firestore'; const firebaseConfig = { apiKey: "YOUR_API_KEY", authDomain:
+"YOUR_AUTH_DOMAIN", projectId: "YOUR_PROJECT_ID", storageBucket: "YOUR_STORAGE_BUCKET",
+messagingSenderId: "YOUR_MESSAGING_SENDER_ID", appId: "YOUR_APP_ID" }; const firebaseApp =
+initializeApp(firebaseConfig); const db = getFirestore(firebaseApp); const routes = [ { path: '/',
+component: CalendarView } ]; const router = createRouter({ history: createWebHistory(), routes });
+const app = createApp(App); app.use(router); app.provide('db', db); app.mount('#app'); //
+src/views/CalendarView.vue
+<template>
+  <div>
+    <h1>D&D Adventure Tracker</h1>
+    <button @click="addDay">Add Day</button>
+    <ul>
+      <li v-for="(day, index) in days" :key="index">
+        Day {{ index + 1 }} - {{ day.notes || 'No notes' }}
+      </li>
+    </ul>
+  </div>
+</template>
+
+<script>
+  import { ref, onMounted, inject } from 'vue'
+  import { collection, addDoc, getDocs } from 'firebase/firestore'
+
+  export default {
+    setup() {
+      const db = inject('db')
+      const days = ref([])
+
+      const fetchDays = async () => {
+        const querySnapshot = await getDocs(collection(db, 'days'))
+        days.value = querySnapshot.docs.map((doc) => doc.data())
+      }
+
+      const addDay = async () => {
+        await addDoc(collection(db, 'days'), { notes: '' })
+        fetchDays()
+      }
+
+      onMounted(fetchDays)
+
+      return { days, addDay }
+    },
+  }
+</script>
